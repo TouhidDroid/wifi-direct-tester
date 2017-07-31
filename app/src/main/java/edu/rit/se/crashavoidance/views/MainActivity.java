@@ -1,10 +1,8 @@
 package edu.rit.se.crashavoidance.views;
 
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -18,12 +16,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,13 +32,55 @@ import edu.rit.se.wifibuddy.WifiDirectHandler;
  */
 public class MainActivity extends AppCompatActivity implements WiFiDirectHandlerAccessor {
 
+    private static final String TAG = WifiDirectHandler.TAG + "MainActivity";
     private WifiDirectHandler wifiDirectHandler;
     private boolean wifiDirectHandlerBound = false;
     private ChatFragment chatFragment = null;
     private LogsDialogFragment logsDialogFragment;
     private MainFragment mainFragment;
     private TextView deviceInfoTextView;
-    private static final String TAG = WifiDirectHandler.TAG + "MainActivity";
+    // TO-DO: BRETT, add JavaDoc
+    // Note: This is used to run WifiDirectHandler as a Service instead of being coupled to an
+    //          Activity. This is NOT a connection to a P2P service being broadcast from a device
+    private ServiceConnection wifiServiceConnection = new ServiceConnection() {
+
+        /**
+         * Called when a connection to the Service has been established, with the IBinder of the
+         * communication channel to the Service.
+         * @param name The component name of the service that has been connected
+         * @param service The IBinder of the Service's communication channel
+         */
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.i(TAG, "Binding WifiDirectHandler service");
+            Log.i(TAG, "ComponentName: " + name);
+            Log.i(TAG, "Service: " + service);
+            WifiDirectHandler.WifiTesterBinder binder = (WifiDirectHandler.WifiTesterBinder) service;
+
+            wifiDirectHandler = binder.getService();
+            wifiDirectHandlerBound = true;
+            Log.i(TAG, "WifiDirectHandler service bound");
+
+            // Add MainFragment to the 'fragment_container' when wifiDirectHandler is bound
+            mainFragment = new MainFragment();
+            replaceFragment(mainFragment);
+
+            deviceInfoTextView.setText(wifiDirectHandler.getThisDeviceInfo());
+        }
+
+        /**
+         * Called when a connection to the Service has been lost.  This typically
+         * happens when the process hosting the service has crashed or been killed.
+         * This does not remove the ServiceConnection itself -- this
+         * binding to the service will remain active, and you will receive a call
+         * to onServiceConnected when the Service is next running.
+         */
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            wifiDirectHandlerBound = false;
+            Log.i(TAG, "WifiDirectHandler service unbound");
+        }
+    };
 
     /**
      * Sets the UI layout for the Activity.
@@ -96,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements WiFiDirectHandler
 
     /**
      * Called when a MenuItem in the Main Menu is selected
+     *
      * @param item Item selected
      */
     @Override
@@ -117,51 +154,9 @@ public class MainActivity extends AppCompatActivity implements WiFiDirectHandler
         }
     }
 
-    // TODO: BRETT, add JavaDoc
-    // Note: This is used to run WifiDirectHandler as a Service instead of being coupled to an
-    //          Activity. This is NOT a connection to a P2P service being broadcast from a device
-    private ServiceConnection wifiServiceConnection = new ServiceConnection() {
-
-        /**
-         * Called when a connection to the Service has been established, with the IBinder of the
-         * communication channel to the Service.
-         * @param name The component name of the service that has been connected
-         * @param service The IBinder of the Service's communication channel
-         */
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.i(TAG, "Binding WifiDirectHandler service");
-            Log.i(TAG, "ComponentName: " + name);
-            Log.i(TAG, "Service: " + service);
-            WifiDirectHandler.WifiTesterBinder binder = (WifiDirectHandler.WifiTesterBinder) service;
-
-            wifiDirectHandler = binder.getService();
-            wifiDirectHandlerBound = true;
-            Log.i(TAG, "WifiDirectHandler service bound");
-
-            // Add MainFragment to the 'fragment_container' when wifiDirectHandler is bound
-            mainFragment = new MainFragment();
-            replaceFragment(mainFragment);
-
-            deviceInfoTextView.setText(wifiDirectHandler.getThisDeviceInfo());
-        }
-
-        /**
-         * Called when a connection to the Service has been lost.  This typically
-         * happens when the process hosting the service has crashed or been killed.
-         * This does not remove the ServiceConnection itself -- this
-         * binding to the service will remain active, and you will receive a call
-         * to onServiceConnected when the Service is next running.
-         */
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            wifiDirectHandlerBound = false;
-            Log.i(TAG, "WifiDirectHandler service unbound");
-        }
-    };
-
     /**
      * Replaces a Fragment in the 'fragment_container'
+     *
      * @param fragment Fragment to add
      */
     public void replaceFragment(Fragment fragment) {
@@ -175,6 +170,7 @@ public class MainActivity extends AppCompatActivity implements WiFiDirectHandler
 
     /**
      * Returns the wifiDirectHandler
+     *
      * @return The wifiDirectHandler
      */
     @Override
@@ -185,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements WiFiDirectHandler
     /**
      * Initiates a P2P connection to a service when a Service ListItem is tapped.
      * An invitation appears on the other device to accept or decline the connection.
+     *
      * @param service The service to connect to
      */
     public void onServiceClick(DnsSdService service) {
@@ -269,9 +266,9 @@ public class MainActivity extends AppCompatActivity implements WiFiDirectHandler
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.i(TAG, "Image captured");
 //        if (requestCode == 1 && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-            chatFragment.pushImage(imageBitmap);
+        Bundle extras = data.getExtras();
+        Bitmap imageBitmap = (Bitmap) extras.get("data");
+        chatFragment.pushImage(imageBitmap);
 //        }
     }
 
@@ -301,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements WiFiDirectHandler
             } else if (intent.getAction().equals(WifiDirectHandler.Action.MESSAGE_RECEIVED)) {
                 // A message from the Communication Manager has been received
                 Log.i(TAG, "Message received");
-                if(chatFragment != null) {
+                if (chatFragment != null) {
                     chatFragment.pushMessage(intent.getByteArrayExtra(WifiDirectHandler.MESSAGE_KEY));
                 }
             } else if (intent.getAction().equals(WifiDirectHandler.Action.WIFI_STATE_CHANGED)) {

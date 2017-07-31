@@ -15,4 +15,5 @@
     <string name="type_message">Type message</string>
     <string name="send">➤</string>
     <string name="finding_services">Finding services</string>
+    <string name="device_name_nconnection_status">Device name\nConnection status</string>
 </resources>

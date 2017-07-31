@@ -109,7 +109,7 @@ public class AvailableServicesFragment extends Fragment{
                 Log.d("TIMING", "Service Discovered and Accessed " + (new Date()).getTime());
                 // Add the service to the UI and update
                 servicesListAdapter.addUnique(service);
-                // TODO Capture an intent that indicates the peer list has changed
+                // TO-DO Capture an intent that indicates the peer list has changed
                 // and see if we need to remove anything from our list
             }
         }
